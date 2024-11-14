@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from http import HTTPStatus
 
 app = Flask(__name__)
@@ -59,6 +59,30 @@ def get_book(book_id):
         ),
         HTTPStatus.OK,
     )
+
+@app.route("/api/books", methods=["POST"])
+def add_book():
+    data = request.get_json()
+    if not data or not all(key in data for key in ["title", "author", "year"]):
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "Missing required fields (title, author, year)",
+                }
+            ),
+            HTTPStatus.BAD_REQUEST,
+        )
+
+    new_book = {
+        "id": max(book["id"] for book in books) + 1,
+        "title": data["title"],
+        "author": data["author"],
+        "year": data["year"],
+    }
+
+    books.append(new_book)
+    return jsonify({"success": True, "data": new_book}), HTTPStatus.CREATED
 
 if __name__ == "__main__":
     app.run(debug=True)
