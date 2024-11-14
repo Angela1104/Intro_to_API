@@ -60,29 +60,43 @@ def get_book(book_id):
         HTTPStatus.OK,
     )
 
-@app.route("/api/books", methods=["POST"])
-def add_book():
-    data = request.get_json()
-    if not data or not all(key in data for key in ["title", "author", "year"]):
+@app.route("/api/books/<int:book_id>", methods=["PUT"])
+def update_book(book_id):
+    book = find_book(book_id)
+    if book is None:
         return (
             jsonify(
                 {
                     "success": False,
-                    "error": "Missing required fields (title, author, year)",
+                    "error": "Book not found",
+                }
+            ),
+            HTTPStatus.NOT_FOUND,
+        )
+
+    data = request.get_json()
+    if not data:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "No data provided",
                 }
             ),
             HTTPStatus.BAD_REQUEST,
         )
 
-    new_book = {
-        "id": max(book["id"] for book in books) + 1,
-        "title": data["title"],
-        "author": data["author"],
-        "year": data["year"],
-    }
+    book.update({key: data[key] for key in ["title", "author", "year"] if key in data})
 
-    books.append(new_book)
-    return jsonify({"success": True, "data": new_book}), HTTPStatus.CREATED
+    return (
+        jsonify(
+            {
+                "success": True,
+                "data": book,
+            }
+        ),
+        HTTPStatus.OK,
+    )
 
 if __name__ == "__main__":
     app.run(debug=True)
